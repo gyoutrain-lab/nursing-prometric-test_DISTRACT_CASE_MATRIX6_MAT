@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maternity & Perinatology Clinical Matrix Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 font-sans selection:bg-teal-500 selection:text-slate-900">
+
+  <!-- Header & Navigation -->
+  <header class="w-full max-w-4xl glass-card rounded-2xl p-4 mb-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-teal-500/30">
+    <div>
+      <h1 class="text-xl font-bold bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">
+        Maternity & Nursery Clinical Matrix
+      </h1>
+      <p class="text-xs text-slate-400 mt-0.5">50 High-Yield Clinical Cases & Precision Dosing Simulator</p>
+    </div>
+    
+    <!-- Game Mode Selectors -->
+    <div class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+      <button id="mode-match-btn" onclick="switchMode('match')" class="px-3 py-1.5 rounded-lg text-teal-400 bg-slate-800 transition">Speed Match</button>
+      <button id="mode-dosing-btn" onclick="switchMode('dosing')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition">Dosing Dial</button>
+      <button id="mode-flag-btn" onclick="switchMode('flag')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition">Red Flag Safety</button>
+    </div>
+
+    <!-- Score & Timer -->
+    <div class="flex items-center gap-3">
+      <div id="timer-display" class="bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-sm px-3 py-1.5 rounded-lg font-bold">
+        ⏱️ 25s
+      </div>
+      <div id="score-display" class="bg-teal-500/10 border border-teal-500/30 text-teal-400 font-mono text-sm px-3 py-1.5 rounded-lg font-bold">
+        Score: 0
+      </div>
+    </div>
+  </header>
+
+  <!-- Game Arena -->
+  <main class="w-full max-w-4xl flex-1 flex flex-col justify-center">
+
+    <!-- MODE 1: SPEED MATCH MATRIX -->
+    <section id="game-mode-match" class="glass-card rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-xs font-bold uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20">
+          Match Case to Exact Drug & Dosing
+        </span>
+        <span id="match-case-counter" class="text-xs text-slate-400 font-mono">Case 1 / 50</span>
+      </div>
+
+      <!-- Vignette Prompt -->
+      <div class="bg-slate-900/90 rounded-xl p-4 mb-6 border border-slate-800">
+        <h2 id="match-condition-title" class="text-lg font-bold text-amber-300 mb-1">Loading...</h2>
+        <p id="match-symptoms" class="text-sm text-slate-300 leading-relaxed">Loading clinical presentation...</p>
+      </div>
+
+      <!-- Match Target Options Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase">1. Select Target Drug & Action</label>
+          <div id="drug-options" class="space-y-2"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase">2. Select Exact Dosage & Route</label>
+          <div id="dose-options" class="space-y-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODE 2: DOSING DIAL SIMULATOR -->
+    <section id="game-mode-dosing" class="hidden glass-card rounded-2xl p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+          Precision Dosing Calibration
+        </span>
+        <span id="dosing-case-counter" class="text-xs text-slate-400 font-mono">Case 1 / 50</span>
+      </div>
+
+      <div class="bg-slate-900/90 rounded-xl p-4 mb-6 border border-slate-800 text-center">
+        <h3 id="dosing-drug-name" class="text-xl font-bold text-teal-300 mb-1">Loading...</h3>
+        <p id="dosing-case-desc" class="text-xs text-slate-400">Loading indication...</p>
+      </div>
+
+      <div class="space-y-6 max-w-lg mx-auto">
+        <!-- Slider: Amount -->
+        <div>
+          <div class="flex justify-between text-sm font-semibold mb-1">
+            <span>Dose Quantity:</span>
+            <span id="slider-dose-val" class="text-teal-400 font-mono">1.0</span>
+          </div>
+          <input type="range" id="slider-dose" min="0.1" max="500" step="0.1" value="1" class="w-full accent-teal-400 bg-slate-800 rounded-lg cursor-pointer">
+        </div>
+
+        <!-- Radio: Unit -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase">Unit Measure</label>
+          <div id="unit-options" class="grid grid-cols-4 gap-2">
+            <button onclick="setUnit('mg')" class="unit-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">mg</button>
+            <button onclick="setUnit('g')" class="unit-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">g</button>
+            <button onclick="setUnit('mcg')" class="unit-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">mcg</button>
+            <button onclick="setUnit('Units')" class="unit-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">Units</button>
+          </div>
+        </div>
+
+        <!-- Radio: Route -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase">Administration Route</label>
+          <div id="route-options" class="grid grid-cols-3 gap-2">
+            <button onclick="setRoute('IV Loading')" class="route-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">IV Loading</button>
+            <button onclick="setRoute('IM')" class="route-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">IM</button>
+            <button onclick="setRoute('PO')" class="route-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700">PO</button>
+          </div>
+        </div>
+
+        <button onclick="submitDosing()" class="w-full py-3 bg-teal-600 hover:bg-teal-500 font-bold text-white rounded-xl shadow-lg transition">
+          Confirm Calibration
+        </button>
+      </div>
+    </section>
+
+    <!-- MODE 3: RED FLAG SAFETY COUNTER-ACTION -->
+    <section id="game-mode-flag" class="hidden glass-card rounded-2xl p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">
+          Contraindication & Safety Override
+        </span>
+        <span id="flag-case-counter" class="text-xs text-slate-400 font-mono">Case 1 / 50</span>
+      </div>
+
+      <div class="bg-slate-900/90 rounded-xl p-4 mb-6 border border-slate-800">
+        <div class="flex items-center gap-2 text-rose-400 font-bold text-sm mb-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          Patient High-Risk Profile
+        </div>
+        <p id="flag-scenario" class="text-sm text-slate-200">Loading scenario...</p>
+      </div>
+
+      <p class="text-xs font-bold text-center text-slate-400 mb-4 uppercase">Proposed Order: <span id="flag-proposed-drug" class="text-amber-400 underline">Loading...</span>. Action?</p>
+
+      <div class="grid grid-cols-2 gap-4">
+        <button onclick="handleFlagAction(false)" class="p-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-bold text-slate-200 transition">
+          ✅ Administer Order
+        </button>
+        <button onclick="handleFlagAction(true)" class="p-4 bg-rose-600/30 hover:bg-rose-600/40 border border-rose-500 text-rose-200 rounded-xl font-bold transition">
+          🛑 CONTRAINDICATED (Override)
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Web Audio API Sound Synthesizer
+    class SoundEngine {
+      constructor() { this.ctx = null; }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      playCorrect() {
+        this.init();
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99].forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.frequency.setValueAtTime(f, now + idx * 0.06);
+          gain.gain.setValueAtTime(0.15, now + idx * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.15);
+          osc.connect(gain); gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.06); osc.stop(now + idx * 0.06 + 0.15);
+        });
+      }
+      playWrong() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(130, now);
+        osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.25);
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // COMPLETE 50 MATERNITY & PERINATOLOGY CLINICAL MATRIX DATASET
+    const matrixCases = [
+      { id: 1, cond: "Severe Preeclampsia", symp: "BP >=160/110 mmHg, 3+ Proteinuria, Severe Headache", drug: "Magnesium Sulfate", dose: "4.0", unit: "g", route: "IV Loading", exact: "4g IV loading over 15-20 min", flagDrug: "Methylergonovine", isFlag: true },
+      { id: 2, cond: "Placenta Previa", symp: "Painless bright red vaginal bleeding at 32 weeks", drug: "Betamethasone", dose: "12.0", unit: "mg", route: "IM", exact: "12mg IM, 2 doses 24h apart", flagDrug: "Digital Cervical Exam", isFlag: true },
+      { id: 3, cond: "Uterine Atony (PPH)", symp: "Boggy uterus, heavy lochia bleeding post-delivery", drug: "Oxytocin", dose: "10.0", unit: "Units", route: "IM", exact: "10 Units IM or 20-40U IV Infusion", flagDrug: "Oxytocin IV Fast Push", isFlag: true },
+      { id: 4, cond: "Neonatal RDS", symp: "Grunting, retractions, cyanosis in 34-week preterm infant", drug: "Beractant (Surfactant)", dose: "4.0", unit: "mL/kg", route: "Intratracheal", exact: "4 mL/kg ET tube", flagDrug: "Sedatives", isFlag: true },
+      { id: 5, cond: "Magnesium Sulfate Toxicity", symp: "Loss of DTRs, RR 9/min, urine output <20 mL/hr", drug: "Calcium Gluconate 10%", dose: "1.0", unit: "g", route: "IV Loading", exact: "1g (10 mL) IV over 3-5 min", flagDrug: "Continued MgSO4 Infusion", isFlag: true },
+      { id: 6, cond: "Neonatal Sepsis", symp: "Temperature instability, lethargy, poor feeding", drug: "Ampicillin + Gentamicin", dose: "50.0", unit: "mg", route: "IV Loading", exact: "Ampicillin 50mg/kg + Gentamicin 2.5mg/kg", flagDrug: "Ceftriaxone", isFlag: true },
+      { id: 7, cond: "Neonatal Hypoglycemia", symp: "Blood glucose <40 mg/dL, jitteriness, tremors", drug: "D10W", dose: "2.0", unit: "mL/kg", route: "IV Loading", exact: "2 mL/kg IV over 5 min", flagDrug: "D50W IV Push", isFlag: true },
+      { id: 8, cond: "Group B Streptococcus (GBS)", symp: "Positive rectovaginal screening at 36 weeks", drug: "Penicillin G", dose: "5.0", unit: "Units", route: "IV Loading", exact: "5 million units IV load, then 2.5-3 mU q4h", flagDrug: "Oral Macrolides", isFlag: true },
+      { id: 9, cond: "Apnea of Prematurity", symp: "Cessation of breathing >20 seconds with bradycardia", drug: "Caffeine Citrate", dose: "20.0", unit: "mg", route: "IV Loading", exact: "20 mg/kg loading, 5-10 mg/kg daily", flagDrug: "Naloxone", isFlag: true },
+      { id: 10, cond: "Rh Isoimmunization Prophylaxis", symp: "Rh-Negative mother delivering Rh-Positive infant, Coombs (-)", drug: "Rh Immune Globulin", dose: "300.0", unit: "mcg", route: "IM", exact: "300 mcg IM within 72 hours", flagDrug: "RhOGAM to Rh-Positive Mother", isFlag: true },
+      { id: 11, cond: "Preterm Labor Tocolysis", symp: "Regular uterine contractions with cervical dilation at 30 weeks", drug: "Nifedipine", dose: "20.0", unit: "mg", route: "PO", exact: "20mg PO load, then 10-20mg q4-6h", flagDrug: "Sublingual Nitroglycerin Fast Push", isFlag: true },
+      { id: 12, cond: "Ophthalmia Neonatorum Prophylaxis", symp: "Routine immediate newborn eye prophylaxis", drug: "Erythromycin 0.5%", dose: "1.0", unit: "cm", route: "Topical", exact: "1-cm ribbon in each lower conjunctival sac", flagDrug: "Gentamicin Ophthalmic Drops", isFlag: false },
+      { id: 13, cond: "Vitamin K Deficiency Bleeding", symp: "Routine hemorrhagic prophylaxis in newborn", drug: "Phytonadione (Vit K1)", dose: "1.0", unit: "mg", route: "IM", exact: "1 mg IM (0.5 mg for preterm <1.5kg)", flagDrug: "Oral Vitamin K in Preterm", isFlag: true },
+      { id: 14, cond: "Refractory PPH (Normotensive)", symp: "Uterine atony persistent after Oxytocin; BP 115/75 mmHg", drug: "Methylergonovine", dose: "0.2", unit: "mg", route: "IM", exact: "0.2 mg IM q2-4h", flagDrug: "Methylergonovine in Severe HTN", isFlag: true },
+      { id: 15, cond: "Postpartum Mastitis", symp: "Unilateral breast warmth, erythema, fever >38.5C", drug: "Dicloxacillin", dose: "500.0", unit: "mg", route: "PO", exact: "500mg PO QID for 10-14 days", flagDrug: "Immediate Cessation of Breastfeeding", isFlag: true },
+      { id: 16, cond: "Patent Ductus Arteriosus (PDA)", symp: "Continuous machinery murmur, bounding pulse in preterm", drug: "Ibuprofen IV", dose: "10.0", unit: "mg", route: "IV Loading", exact: "10 mg/kg load, then 5 mg/kg at 24 & 48 hrs", flagDrug: "Prostaglandin E1 Infusion", isFlag: true },
+      { id: 17, cond: "Ductal-Dependent Cyanotic CHD", symp: "Transposition of Great Arteries; severe cyanosis", drug: "Alprostadil (PGE1)", dose: "0.05", unit: "mcg", route: "IV Loading", exact: "0.05-0.1 mcg/kg/min continuous IV", flagDrug: "Indomethacin", isFlag: true },
+      { id: 18, cond: "Incomplete Abortion", symp: "Vaginal bleeding, open cervical os, retained tissue at 10w", drug: "Misoprostol", dose: "800.0", unit: "mcg", route: "PO", exact: "800mcg sublingual or intravaginal", flagDrug: "High-Dose Oxytocin Bolus", isFlag: true },
+      { id: 19, cond: "Unruptured Ectopic Pregnancy", symp: "Unruptured mass <3.5 cm, hCG <5000 IU/L, hemodynamically stable", drug: "Methotrexate", dose: "50.0", unit: "mg", route: "IM", exact: "50 mg/m2 IM single-dose protocol", flagDrug: "Uterine Curettage", isFlag: true },
+      { id: 20, cond: "Hyperemesis Gravidarum", symp: "Intractable nausea, >5% weight loss, ketonuria at 9w", drug: "Ondansetron", dose: "4.0", unit: "mg", route: "IV Loading", exact: "4mg to 8mg IV q8h PRN", flagDrug: "Fluid Restriction", isFlag: true },
+      { id: 21, cond: "Postpartum Endometritis", symp: "Fever >38.4C, uterine tenderness, foul-smelling lochia post C-section", drug: "Clindamycin + Gentamicin", dose: "900.0", unit: "mg", route: "IV Loading", exact: "Clindamycin 900mg q8h + Gentamicin 1.5mg/kg q8h", flagDrug: "Single Agent Oral Amoxicillin", isFlag: true },
+      { id: 22, cond: "Severe Hypertensive Urgency in Pregnancy", symp: "BP 175/115 mmHg at 34 weeks gestation", drug: "Labetalol IV", dose: "20.0", unit: "mg", route: "IV Loading", exact: "20mg IV slow push, double q10m to max 80mg", flagDrug: "Enalapril / ACE Inhibitors", isFlag: true },
+      { id: 23, cond: "Neonatal Abstinence Syndrome (NAS)", symp: "High-pitched cry, tremors, diarrhea from maternal opioid exposure", drug: "Morphine Sulfate PO", dose: "0.05", unit: "mg", route: "PO", exact: "0.03-0.1 mg/kg/dose PO q3-4h", flagDrug: "Naloxone", isFlag: true },
+      { id: 24, cond: "Pregnancy DVT / VTE", symp: "Unilateral left lower extremity edema and severe calf pain at 24w", drug: "Enoxaparin (LMWH)", dose: "1.0", unit: "mg", route: "IM", exact: "1 mg/kg SubQ q12h", flagDrug: "Warfarin in 1st/2nd Trimester", isFlag: true },
+      { id: 25, cond: "Congenital Syphilis", symp: "Newborn with snuffles, maculopapular rash, hepatomegaly", drug: "Aqueous Crystalline Penicillin G", dose: "50000.0", unit: "Units", route: "IV Loading", exact: "50,000 units/kg/dose IV q12h for 10-14 days", flagDrug: "Oral Azithromycin Monotherapy", isFlag: true },
+      { id: 26, cond: "Cord Prolapse Acute Tocolysis", symp: "Prolapsed umbilical cord; acute hypertonus contractions", drug: "Terbutaline", dose: "0.25", unit: "mg", route: "IM", exact: "0.25 mg SubQ single dose", flagDrug: "Oxytocin Infusion Boost", isFlag: true },
+      { id: 27, cond: "Intrahepatic Cholestasis of Pregnancy", symp: "Intense generalized pruritus palms/soles, elevated bile acids", drug: "Ursodeoxycholic Acid", dose: "15.0", unit: "mg", route: "PO", exact: "15 mg/kg/day PO divided BID/TID", flagDrug: "High-Dose Prednisone", isFlag: true },
+      { id: 28, cond: "Congenital Hypothyroidism", symp: "Newborn screening shows elevated TSH, sluggishness, umbilical hernia", drug: "Levothyroxine", dose: "12.0", unit: "mcg", route: "PO", exact: "10-15 mcg/kg/day PO crushed", flagDrug: "Propylthiouracil (PTU)", isFlag: true },
+      { id: 29, cond: "Post-Epidural Spinal Headache", symp: "Severe postural headache non-responsive to caffeine/hydration", drug: "Epidural Blood Patch", dose: "15.0", unit: "mL/kg", route: "IV Loading", exact: "15-20 mL autologous epidural blood patch", flagDrug: "Repeat Lumbar Puncture", isFlag: true },
+      { id: 30, cond: "Necrotizing Enterocolitis (NEC)", symp: "Abdominal distension, pneumatosis intestinalis, bloody stools", drug: "Ampicillin + Gentamicin + Metronidazole", dose: "50.0", unit: "mg", route: "IV Loading", exact: "NPO, NG suction, triple IV antibiotics", flagDrug: "Enteral Formula Feeding", isFlag: true },
+      { id: 31, cond: "Active Genital Herpes at Term", symp: "Active painful vulvar lesions at 36 weeks gestation", drug: "Acyclovir", dose: "400.0", unit: "mg", route: "PO", exact: "400mg PO TID from 36w to delivery", flagDrug: "Vaginal Delivery without Suppression", isFlag: true },
+      { id: 32, cond: "Persistent Pulmonary HTN of Newborn (PPHN)", symp: "Severe hypoxemia out of proportion to lung disease, systemic BP normal", drug: "Inhaled Nitric Oxide (iNO)", dose: "20.0", unit: "mg", route: "IV Loading", exact: "20 ppm inhaled continuously", flagDrug: "High-Dose Systemic Vasodilators", isFlag: true },
+      { id: 33, cond: "Hypoxic-Ischemic Encephalopathy Seizures", symp: "Neonatal tonic-clonic seizures within 12 hours of birth", drug: "Phenobarbital", dose: "20.0", unit: "mg", route: "IV Loading", exact: "20 mg/kg IV slow loading dose", flagDrug: "Rapid Undiluted IV Push", isFlag: true },
+      { id: 34, cond: "GDM Uncontrolled by Diet", symp: "Fasting blood glucose >95 mg/dL, 2h postprandial >120 mg/dL", drug: "Insulin (Human/Lispro)", dose: "0.7", unit: "Units", route: "IM", exact: "0.7-1.0 Units/kg/day divided SubQ", flagDrug: "Sulfonylureas with High Hypoglycemia Risk", isFlag: true },
+      { id: 35, cond: "Postpartum Primary Dysmenorrhea", symp: "Severe uterine cramping during menses postpartum", drug: "Mefenamic Acid", dose: "500.0", unit: "mg", route: "PO", exact: "500mg PO loading, then 250mg q6h PRN", flagDrug: "Aspirin in Pediatric Breastfeeding", isFlag: true },
+      { id: 36, cond: "Cervical Ripening (Unfavorable Bishop)", symp: "41 weeks, Bishop score 3, intact membranes", drug: "Dinoprostone Insert", dose: "10.0", unit: "mg", route: "Topical", exact: "10mg intravaginal insert over 12 hours", flagDrug: "Concurrent Oxytocin Infusion", isFlag: true },
+      { id: 37, cond: "Refractory Preterm Hypotension", symp: "BP 35/18 mmHg in 26-week infant non-responsive to fluid bolus", drug: "Hydrocortisone", dose: "1.0", unit: "mg", route: "IV Loading", exact: "1 mg/kg IV q8-12h", flagDrug: "Rapid High-Volume Crystalloid Push", isFlag: true },
+      { id: 38, cond: "Opioid-Induced Neonatal Depression", symp: "Respiratory depression in neonate born 30m after maternal meperidine", drug: "Naloxone Neonatal", dose: "0.1", unit: "mg", route: "IV Loading", exact: "0.1 mg/kg IV/IM after ventilation", flagDrug: "Naloxone Before Airway Clearance", isFlag: true },
+      { id: 39, cond: "Chorioamnionitis", symp: "Maternal fever >38.0C, uterine tenderness, fetal tachycardia", drug: "Ampicillin + Gentamicin", dose: "2.0", unit: "g", route: "IV Loading", exact: "Ampicillin 2g IV q6h + Gentamicin 1.5mg/kg q8h", flagDrug: "Delaying Delivery", isFlag: true },
+      { id: 40, cond: "Transient Tachypnea of Newborn (TTN)", symp: "Tachypnea RR 80/min following elective C-section, mild chest retractions", drug: "Supplemental Oxygen Support", dose: "30.0", unit: "Units", route: "Topical", exact: "O2 to keep SpO2 >90%, neutral thermal environment", flagDrug: "Routine Furosemide Diuretic", isFlag: true },
+      { id: 41, cond: "Refractory PPH (Asthmatic Patient)", symp: "Persistent uterine atony, history of severe bronchial asthma", drug: "Misoprostol", dose: "800.0", unit: "mcg", route: "PO", exact: "800mcg Sublingual / Rectal", flagDrug: "Carboprost Tromethamine (Hemabate)", isFlag: true },
+      { id: 42, cond: "Epidural-Induced Hypotension Prevention", symp: "Maternal BP drop following epidural anesthesia placement", drug: "Lactated Ringer's Pre-load", dose: "1000.0", unit: "mL/kg", route: "IV Loading", exact: "500-1000 mL IV crystalloid co-load", flagDrug: "D5W Fast Infusion", isFlag: true },
+      { id: 43, cond: "Hepatitis B Exposed Neonate", symp: "Infant born to HBsAg Positive mother", drug: "HepB Vaccine + HBIG", dose: "0.5", unit: "mL/kg", route: "IM", exact: "HepB Vaccine 0.5 mL + HBIG 0.5 mL IM within 12h", flagDrug: "Delaying HBIG Beyond 12 Hours", isFlag: true },
+      { id: 44, cond: "Bacterial Vaginosis in Pregnancy", symp: "Clue cells, positive whiff test, profuse gray-white discharge at 16w", drug: "Metronidazole", dose: "500.0", unit: "mg", route: "PO", exact: "500mg PO BID for 7 days", flagDrug: "Alcohol Consumption During Therapy", isFlag: true },
+      { id: 45, cond: "Perinatal HIV Transmission Prevention", symp: "Infant born to HIV-positive mother with suppressed viral load", drug: "Zidovudine (AZT)", dose: "4.0", unit: "mg", route: "PO", exact: "4 mg/kg/dose PO BID for 4-6 weeks", flagDrug: "Direct Breastfeeding in High-Resource Setting", isFlag: true },
+      { id: 46, cond: "Neural Tube Defect High-Risk Prevention", symp: "Pre-conception planning in patient with prior spina bifida child", drug: "Folic Acid High-Dose", dose: "4.0", unit: "mg", route: "PO", exact: "4 mg (4000 mcg) PO daily pre-conception", flagDrug: "Standard 400mcg Low Dose", isFlag: false },
+      { id: 47, cond: "Listeriosis in Pregnancy", symp: "Maternal flu-like illness, fever, unpasteurized cheese consumption history", drug: "Ampicillin IV", dose: "2.0", unit: "g", route: "IV Loading", exact: "2g IV q4h for 14 days", flagDrug: "Cephalosporins (Listeria Resistant)", isFlag: true },
+      { id: 48, cond: "Severe Vulvovaginal Candidiasis", symp: "Intense vulvar pruritus, cottage-cheese discharge at 28w", drug: "Clotrimazole Vaginal Cream", dose: "100.0", unit: "mg", route: "Topical", exact: "100mg intravaginally daily for 7 days", flagDrug: "High-Dose Oral Fluconazole", isFlag: true },
+      { id: 49, cond: "Post-Term Induction (Favorable Bishop)", symp: "41+3 weeks gestation, Bishop score 9, soft dilated cervix", drug: "Oxytocin Infusion", dose: "2.0", unit: "Units", route: "IV Loading", exact: "1-2 mU/min IV, titrate by 1-2 mU q30m", flagDrug: "Bolus IV Push", isFlag: true },
+      { id: 50, cond: "Uterine Tachysystole from Oxytocin", symp: ">5 contractions in 10 minutes with late decelerations FHR", drug: "Discontinue Oxytocin + Terbutaline", dose: "0.25", unit: "mg", route: "IM", exact: "Stop Oxytocin immediately; Terbutaline 0.25mg SubQ", flagDrug: "Increasing Oxytocin Infusion", isFlag: true }
+    ];
+
+    let currentCaseIdx = 0;
+    let score = 0;
+    let timer = 25;
+    let timerInterval = null;
+    
+    let selectedDrug = null;
+    let selectedDose = null;
+    let selectedUnit = 'mg';
+    let selectedRoute = 'IV Loading';
+    let activeMode = 'match';
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timer = 25;
+      document.getElementById("timer-display").innerText = `⏱️ ${timer}s`;
+      timerInterval = setInterval(() => {
+        timer--;
+        document.getElementById("timer-display").innerText = `⏱️ ${timer}s`;
+        if (timer <= 0) {
+          clearInterval(timerInterval);
+          sound.playWrong();
+          nextCase();
+        }
+      }, 1000);
+    }
+
+    function switchMode(mode) {
+      activeMode = mode;
+      document.getElementById("game-mode-match").classList.add("hidden");
+      document.getElementById("game-mode-dosing").classList.add("hidden");
+      document.getElementById("game-mode-flag").classList.add("hidden");
+
+      document.getElementById("mode-match-btn").className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition";
+      document.getElementById("mode-dosing-btn").className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition";
+      document.getElementById("mode-flag-btn").className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition";
+
+      if (mode === 'match') {
+        document.getElementById("game-mode-match").classList.remove("hidden");
+        document.getElementById("mode-match-btn").className = "px-3 py-1.5 rounded-lg text-teal-400 bg-slate-800 transition";
+        loadMatchCase();
+      } else if (mode === 'dosing') {
+        document.getElementById("game-mode-dosing").classList.remove("hidden");
+        document.getElementById("mode-dosing-btn").className = "px-3 py-1.5 rounded-lg text-emerald-400 bg-slate-800 transition";
+        loadDosingCase();
+      } else if (mode === 'flag') {
+        document.getElementById("game-mode-flag").classList.remove("hidden");
+        document.getElementById("mode-flag-btn").className = "px-3 py-1.5 rounded-lg text-rose-400 bg-slate-800 transition";
+        loadFlagCase();
+      }
+    }
+
+    // MODE 1: SPEED MATCH LOGIC
+    function loadMatchCase() {
+      startTimer();
+      const c = matrixCases[currentCaseIdx];
+      document.getElementById("match-case-counter").innerText = `Case ${currentCaseIdx + 1} / ${matrixCases.length}`;
+      document.getElementById("match-condition-title").innerText = c.cond;
+      document.getElementById("match-symptoms").innerText = c.symp;
+
+      selectedDrug = null;
+      selectedDose = null;
+
+      // Dynamic Distractors Generation
+      let drugDistractors = matrixCases.map(x => x.drug).filter(d => d !== c.drug);
+      let doseDistractors = matrixCases.map(x => x.exact).filter(d => d !== c.exact);
+
+      let drugOptions = shuffleArray([c.drug, ...shuffleArray(drugDistractors).slice(0, 2)]);
+      let doseOptions = shuffleArray([c.exact, ...shuffleArray(doseDistractors).slice(0, 2)]);
+
+      renderMatchOptions("drug-options", drugOptions, 'drug', c.drug);
+      renderMatchOptions("dose-options", doseOptions, 'dose', c.exact);
+    }
+
+    function renderMatchOptions(containerId, options, type, correctVal) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "w-full text-left p-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 transition";
+        btn.innerText = opt;
+        btn.onclick = () => {
+          if (type === 'drug') selectedDrug = opt;
+          if (type === 'dose') selectedDose = opt;
+
+          Array.from(container.children).forEach(b => b.classList.remove("border-teal-400", "bg-teal-500/20", "text-teal-200"));
+          btn.classList.add("border-teal-400", "bg-teal-500/20", "text-teal-200");
+
+          checkMatchAnswer();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function checkMatchAnswer() {
+      const c = matrixCases[currentCaseIdx];
+      if (selectedDrug && selectedDose) {
+        if (selectedDrug === c.drug && selectedDose === c.exact) {
+          score += 100;
+          sound.playCorrect();
+        } else {
+          sound.playWrong();
+        }
+        document.getElementById("score-display").innerText = `Score: ${score}`;
+        nextCase();
+      }
+    }
+
+    // MODE 2: DOSING DIAL LOGIC
+    function loadDosingCase() {
+      startTimer();
+      const c = matrixCases[currentCaseIdx];
+      document.getElementById("dosing-case-counter").innerText = `Case ${currentCaseIdx + 1} / ${matrixCases.length}`;
+      document.getElementById("dosing-drug-name").innerText = c.drug;
+      document.getElementById("dosing-case-desc").innerText = `Indication: ${c.cond} (${c.symp})`;
+      
+      const slider = document.getElementById("slider-dose");
+      slider.value = 1.0;
+      document.getElementById("slider-dose-val").innerText = "1.0";
+      
+      slider.oninput = (e) => {
+        document.getElementById("slider-dose-val").innerText = parseFloat(e.target.value).toFixed(1);
+      };
+
+      setUnit('mg');
+      setRoute('IV Loading');
+    }
+
+    function setUnit(u) {
+      selectedUnit = u;
+      document.querySelectorAll(".unit-btn").forEach(btn => {
+        if (btn.innerText === u) {
+          btn.className = "unit-btn px-3 py-2 bg-emerald-600/30 border border-emerald-500 text-emerald-300 rounded-lg text-xs font-bold";
+        } else {
+          btn.className = "unit-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700 text-slate-300";
+        }
+      });
+    }
+
+    function setRoute(r) {
+      selectedRoute = r;
+      document.querySelectorAll(".route-btn").forEach(btn => {
+        if (btn.innerText === r) {
+          btn.className = "route-btn px-3 py-2 bg-emerald-600/30 border border-emerald-500 text-emerald-300 rounded-lg text-xs font-bold";
+        } else {
+          btn.className = "route-btn px-3 py-2 bg-slate-800 rounded-lg text-xs font-bold border border-slate-700 text-slate-300";
+        }
+      });
+    }
+
+    function submitDosing() {
+      const c = matrixCases[currentCaseIdx];
+      const val = parseFloat(document.getElementById("slider-dose").value);
+      const targetVal = parseFloat(c.dose);
+
+      // Tolerance margin check
+      const isDoseCorrect = Math.abs(val - targetVal) <= (targetVal * 0.25 || 0.5);
+      const isUnitCorrect = selectedUnit.toLowerCase() === c.unit.toLowerCase();
+
+      if (isDoseCorrect && isUnitCorrect) {
+        score += 150;
+        sound.playCorrect();
+      } else {
+        sound.playWrong();
+      }
+      document.getElementById("score-display").innerText = `Score: ${score}`;
+      nextCase();
+    }
+
+    // MODE 3: RED FLAG SAFETY LOGIC
+    function loadFlagCase() {
+      startTimer();
+      const c = matrixCases[currentCaseIdx];
+      document.getElementById("flag-case-counter").innerText = `Case ${currentCaseIdx + 1} / ${matrixCases.length}`;
+      document.getElementById("flag-scenario").innerText = `${c.cond}: ${c.symp}`;
+      document.getElementById("flag-proposed-drug").innerText = c.flagDrug;
+    }
+
+    function handleFlagAction(userSaidContraindicated) {
+      const c = matrixCases[currentCaseIdx];
+      if (userSaidContraindicated === c.isFlag) {
+        score += 200;
+        sound.playCorrect();
+      } else {
+        sound.playWrong();
+      }
+      document.getElementById("score-display").innerText = `Score: ${score}`;
+      nextCase();
+    }
+
+    function nextCase() {
+      clearInterval(timerInterval);
+      currentCaseIdx = (currentCaseIdx + 1) % matrixCases.length;
+      setTimeout(() => {
+        switchMode(activeMode);
+      }, 300);
+    }
+
+    function shuffleArray(arr) {
+      let shuffled = [...arr];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Launch Simulator
+    loadMatchCase();
+  </script>
+</body>
+</html>
